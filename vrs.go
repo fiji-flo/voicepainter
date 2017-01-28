@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"net/url"
 	"net/http"
 )
 
@@ -18,6 +21,55 @@ func debug(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("From: " + r.RemoteAddr)
 }
 
+func getOpenclipart(s string) string {
+	var u *url.URL;
+
+	type Svg struct {
+		Url string
+	}
+	type Payload struct {
+		Title string
+		Svg Svg
+	}
+	type ApiResponse struct {
+		Msg string
+		Payload []Payload
+	}
+
+	var ar ApiResponse;
+
+	u, err := url.Parse("https://openclipart.org/search/json/");
+	if (err != nil) {
+		fmt.Println("Parsing url failed\n");
+		return "";
+	}
+
+	q := u.Query();
+	q.Set("query", s);
+	u.RawQuery = q.Encode()
+
+	resp, err := http.Get(u.String())
+	if (err != nil || resp.StatusCode != 200) {
+		fmt.Println("GET failed\n");
+		return "";
+	}
+
+	body, err := ioutil.ReadAll(resp.Body);
+	resp.Body.Close();
+	if (err != nil) {
+		fmt.Println("Read failed\n");
+		return "";
+	}
+
+	err = json.Unmarshal(body, &ar);
+	if (err != nil) {
+		fmt.Println("unmarshal failed\n");
+		return "";
+	}
+
+	return ar.Payload[0].Svg.Url;
+}
+
 func image(w http.ResponseWriter, r *http.Request) {
 	var what string;
 
@@ -27,6 +79,7 @@ func image(w http.ResponseWriter, r *http.Request) {
 	if (what == "") {
 		w.WriteHeader(http.StatusBadRequest);
 		fmt.Fprintf(w, "usage: image?what=dog");
+		return;
 	}
 
 	if (what == "cat") {
@@ -35,7 +88,10 @@ func image(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "https://www.cesarsway.com/sites/newcesarsway/files/d6/images/features/2012/sept/Dyeing-Your-Dogs-Hair-Is-a-Bad-Idea.jpg");
 	} else if (what == "house") {
 		fmt.Fprintf(w, "http://images.clipartpanda.com/clipart-house-House-Clip-Art-87.jpg");
+	} else {
+		fmt.Fprintf(w, getOpenclipart(what));
 	}
+
 }
 
 func main() {
