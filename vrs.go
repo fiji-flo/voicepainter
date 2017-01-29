@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"encoding/json"
 	"io/ioutil"
+	"database/sql"
 	"net/url"
 	"net/http"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func debug(w http.ResponseWriter, r *http.Request) {
@@ -82,23 +86,127 @@ func image(w http.ResponseWriter, r *http.Request) {
 		return;
 	}
 
-	if (what == "cat") {
-		fmt.Fprintf(w, "https://clipartfest.com/download/c67e552105c1c72d268d22a1ccff70cf7421fbe8.html");
-	} else if (what == "dog") {
-		fmt.Fprintf(w, "https://www.cesarsway.com/sites/newcesarsway/files/d6/images/features/2012/sept/Dyeing-Your-Dogs-Hair-Is-a-Bad-Idea.jpg");
-	} else if (what == "house") {
-		fmt.Fprintf(w, "http://images.clipartpanda.com/clipart-house-House-Clip-Art-87.jpg");
-	} else {
-		fmt.Fprintf(w, getOpenclipart(what));
+	fmt.Fprintf(w, getOpenclipart(what));
+}
+
+func check_noun(s string, db *sql.DB) string {
+	rows, err := db.Query("SELECT noun FROM nouns WHERE noun = ?", s);
+	if (err != nil) {
+		log.Fatal("select failed");
 	}
 
+	for rows.Next() {
+		var result string;
+		err = rows.Scan(&result);
+		if (result == s) {
+			return result
+		}
+	}
+
+	return "";
+}
+
+func find_noun(s []string, pos int, db *sql.DB) int {
+
+	// circle around the word until we find a noun
+	for i := 1; i < len(s); i++ {
+		var ppos int;
+
+		ppos = pos - i;
+		if (ppos >= 0 && ppos < len(s) && s[ppos] != "") {
+			if (check_noun(s[ppos], db) != "") {
+				return ppos;
+			}
+		}
+		ppos = pos + i;
+		if (ppos >= 0 && ppos < len(s) && s[ppos] != "") {
+			if (check_noun(s[ppos], db) != "") {
+				return ppos;
+			}
+		}
+	}
+
+	return -1;
+}
+
+func image_nlp(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	var what string;
+
+	type ApiResponse struct {
+		Left string
+		Right string
+		Background string
+		Middle string
+	}
+	var ar ApiResponse;
+
+	what = r.FormValue("what");
+
+	if (what == "") {
+		w.WriteHeader(http.StatusBadRequest);
+		fmt.Fprintf(w, "usage: image2?what=draw%20a%20house%20in%20the%20background");
+		return;
+	}
+
+	var words []string;
+	words = strings.Split(what, " ");
+
+	for index, elem := range words {
+		var left int;
+		var right int;
+		var middle int;
+		var background int;
+		if (elem == "left" || elem == "Left") {
+			left = find_noun(words, index, db);
+			ar.Left = getOpenclipart(words[left]);
+			words[left] = "";
+			words[index] = "";
+		} else if (elem == "right" || elem == "Right") {
+			right = find_noun(words, index, db);
+			ar.Right = getOpenclipart(words[right]);
+			words[right] = "";
+			words[index] = "";
+		} else if (elem == "middle" || elem == "middle" || elem == "mid" || elem == "Mid") {
+			middle = find_noun(words, index, db);
+			ar.Middle = getOpenclipart(words[middle]);
+			words[middle] = "";
+			words[index] = "";
+		} else if (elem == "background" || elem == "Background") {
+			background = find_noun(words, index, db);
+			ar.Background = getOpenclipart(words[background]);
+			words[background] = "";
+			words[index] = "";
+		}
+		//fmt.Printf("index %d: %s\n", index, words[index]);
+	}
+
+	var resp []byte;
+	resp, _ = json.Marshal(ar);
+	fmt.Fprintf(w, string(resp));
 }
 
 func main() {
 	fmt.Println("VRS")
 
+	db, err := sql.Open("sqlite3", "./words.db")
+	if (err != nil) {
+		log.Fatal("could not open words.db");
+	}
+
+	rows, err := db.Query("SELECT * FROM adjectives LIMIT 10")
+	defer rows.Close()
+	for rows.Next() {
+		var a string;
+		err = rows.Scan(&a)
+		if (err != nil) {
+			log.Fatal("rows.Scan failed");
+		}
+	}
+
+
 	http.HandleFunc("/debug", debug)
 	http.HandleFunc("/image", image)
+	http.HandleFunc("/image2", func(w http.ResponseWriter, r *http.Request){image_nlp(w, r, db)})
 
 	http.ListenAndServe(":8080", nil)
 }
