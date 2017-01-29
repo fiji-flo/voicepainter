@@ -78,7 +78,7 @@ func image(w http.ResponseWriter, r *http.Request) {
 	var what string;
 
 	what = r.FormValue("what");
-	fmt.Println("what: " + what);
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if (what == "") {
 		w.WriteHeader(http.StatusBadRequest);
@@ -141,6 +141,8 @@ func image_nlp(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	var ar ApiResponse;
 
 	what = r.FormValue("what");
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if (what == "") {
 		w.WriteHeader(http.StatusBadRequest);
