@@ -185,6 +185,10 @@ func image_nlp(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	fmt.Fprintf(w, string(resp));
 }
 
+func staticFiles(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/"+r.URL.Path[1:])
+}
+
 func main() {
 	fmt.Println("VRS")
 
@@ -205,6 +209,7 @@ func main() {
 
 
 	http.HandleFunc("/debug", debug)
+	http.HandleFunc("/static/", staticFiles)
 	http.HandleFunc("/image", image)
 	http.HandleFunc("/image2", func(w http.ResponseWriter, r *http.Request){image_nlp(w, r, db)})
 
