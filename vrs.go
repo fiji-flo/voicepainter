@@ -197,17 +197,6 @@ func main() {
 		log.Fatal("could not open words.db");
 	}
 
-	rows, err := db.Query("SELECT * FROM adjectives LIMIT 10")
-	defer rows.Close()
-	for rows.Next() {
-		var a string;
-		err = rows.Scan(&a)
-		if (err != nil) {
-			log.Fatal("rows.Scan failed");
-		}
-	}
-
-
 	http.HandleFunc("/debug", debug)
 	http.HandleFunc("/static/", staticFiles)
 	http.HandleFunc("/image", image)
