@@ -1,0 +1,19 @@
+{
+  "name": "voicepainter",
+  "version": "1.0.0",
+  "description": "project from 'Mozilla Voice Recognition Hackz'",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiji-flo/voicepainter.git"
+  },
+  "author": "Dinarte Jesus <jdinartejesus@gmail.com> (http://github.com/jdinartejesus)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fiji-flo/voicepainter/issues"
+  },
+  "homepage": "https://github.com/fiji-flo/voicepainter#readme"
+}
