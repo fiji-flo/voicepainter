@@ -1,10 +1,23 @@
 <!DOCTYPE html>
 <html>
-
-    <meta charset="utf-8" />
-
+  <head>
+    <meta charset="utf-8">
+    <title>Moz Voice Painter</title>
+    <link rel="stylesheet" type="text/css" href="./styles.css">
+  </head>
+  <body>
+    <canvas id="playground"></canvas>
+    <div id="controls">
+      <p>You said: <span data-action="voice-recorded"></span></p>
+      <img data-action="recording-signal" src="https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fweb.ncf.ca%2Fadamandruth%2FUbuntu102.gif&f=1" alt="recording icon" />
+      <ul class="commands">
+        <li>use a <strong>:what</strong> as background</li>
+        <li>put a <strong>:what</strong> in the middle</li>
+        <li>put a <strong>:what</strong> to the left</li>
+        <li>put a <strong>:what</strong> to the right</li>
+      </ul>
+    </div>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js"></script>
     <script src="index.js"></script>
-
-
+  </body>
 </html>
